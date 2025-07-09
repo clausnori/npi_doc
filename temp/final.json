@@ -1,0 +1,101 @@
+"provider": {
+  "provider_identification": {
+    "npi": "1003000423",
+    "pac_id": 9133397268,
+    "enrollment_id": "I20110715000515",
+    "entity_type_code": 1
+  },
+  "provider_personal_info": {
+    "last_name": "VELOTTA",
+    "first_name": "JENNIFER",
+    "middle_name": "A",
+    "suffix": null,
+    "gender": "F",
+    "credentials": "M.D."
+  },
+  "provider_professional_info": {
+    "medical_school": "TOLEDO MEDICAL COLLEGE",
+    "graduation_year": 2007,
+    "primary_specialty": "OBSTETRICS/GYNECOLOGY",
+    "secondary_specialties": [],
+    "taxonomy_code": ["207V00000X","207X00000X"]
+    "taxonomy_primary": true
+  },
+  "provider_licensing": {
+    "license_number": "35.096673",
+    "license_state": "OH"
+  },
+  "business_addresses": {
+    "mailing_address": {
+      "line_1": "11100 EUCLID AVE",
+      "line_2": null,
+      "city": "CLEVELAND",
+      "state": "OH",
+      "zip_code": "441061716",
+      "country": "US",
+      "phone": null,
+      "fax": null
+    },
+    "practice_location": {
+      "line_1": "11100 EUCLID AVE",
+      "line_2": null,
+      "city": "CLEVELAND",
+      "state": "OH",
+      "zip_code": "441061716",
+      "country": "US",
+      "phone": 2168441000,
+      "fax": null
+    }
+  },
+  "current_practice_info": {
+    "facility_name": "LAKE OBSTETRICS AND GYNECOLOGY, INC.",
+    "facility_pac_id": 5799794350,
+    "organization_members_count": 5,
+    "practice_address": {
+      "line_1": "9500 MENTOR AVE",
+      "line_2": "SUITE 220",
+      "city": "MENTOR",
+      "state": "OH",
+      "zip_code": "440608702",
+      "phone": 4403577100,
+      "address_id": "OH440608702ME9500XAVEX304"
+    }
+  },
+  "medicare_participation": {
+    "individual_assignment": "Y",
+    "group_assignment": "Y"
+  },
+  "administrative_dates": {
+    "npi_enumeration_date": "08/29/2007",
+    "last_update_date": "05/28/2021",
+    "certification_date": "05/28/2021",
+    "deactivation_date": null,
+    "reactivation_date": null
+  }
+  "provider_status": {
+    "active": true,
+    "deactivation_reason": null,
+    "is_sole_proprietor": N",
+    "is_organization_subpart": null
+  },
+  "telehealth_services": {
+    "telehealth_eligible": null
+  },
+  "additional_identifiers": [],
+  "authorized_official": {
+    "last_name": null,
+    "first_name": null,
+    "middle_name": null,
+    "title": null,
+    "phone": null,
+    "credentials": null
+  },
+  "parent_organization": {
+    "legal_business_name": null,
+    "tax_id": null
+  },
+  "meta_info":{
+    "data_hash":"Gfsfghhhbrefbhgfrdcvbb",
+    "last_update":"01/01/2025"
+  }
+}
