@@ -2,7 +2,6 @@
 #Api from PECOS 
 #Load zip cron from NPI
 
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -14,7 +13,4 @@ class Provider(BaseModel):
 
 @app.post("/provider/")
 async def create_provider(provider: Provider):
-    return {"received": provider}
-    
-    
-  
+    return {"received": provider }

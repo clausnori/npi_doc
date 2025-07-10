@@ -1,0 +1,11 @@
+#!/bin/bash
+
+VENV_DIR="app"
+
+python3 -m venv $VENV_DIR
+
+source $VENV_DIR/bin/activate
+
+pip install -r req.txt
+
+echo "INSTALL OK '$VENV_DIR'"
