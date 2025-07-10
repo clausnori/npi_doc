@@ -1,0 +1,4 @@
+motor
+uvicorn
+fastapi
+pandas

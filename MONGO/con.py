@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from typing import List, Dict, Optional, Any
 from bson import ObjectId
 import datetime
@@ -7,10 +7,16 @@ import hashlib
 
 class ProviderDB:
     def __init__(self, connection_string: str, database_name: str, collection_name: str = "providers"):
-        self.client = MongoClient(connection_string)
+        self.client = AsyncIOMotorClient(connection_string)
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
-        self.collection.create_index("provider.provider_identification.npi", unique=True)
+        self._index_created = False
+    
+    async def _ensure_index(self):
+        """Создаем индекс если он еще не создан"""
+        if not self._index_created:
+            await self.collection.create_index("provider.provider_identification.npi", unique=True)
+            self._index_created = True
     
     def _generate_data_hash(self, data: Dict[str, Any]) -> str:
         provider = data.get("provider", data)
@@ -25,11 +31,11 @@ class ProviderDB:
         
     def _merge_providers(self, old: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
         def is_empty(value):
-            """For  empty value"""
+            """Проверка на пустое значение"""
             return value in [None, "", [], {}]
         
         def normalize_value(value):
-            """norm data for comparison"""
+            """Нормализация данных для сравнения"""
             if isinstance(value, str) and value.isdigit():
                 return int(value)
             return value
@@ -49,16 +55,16 @@ class ProviderDB:
                     elif isinstance(new_value, dict) and isinstance(old_value, dict):
                         merged_nested = deep_merge(old_value, new_value)
                         if merged_nested != old_value:
-                            merged[key] = merged_nestedы
+                            merged[key] = merged_nested
                     elif isinstance(new_value, list) and isinstance(old_value, list):
                         if new_value:
                             combined = old_value + new_value
                             merged[key] = list(dict.fromkeys(combined))
                                        
-                    # For all other cases - compare normalized values
+                    # Для всех остальных случаев - сравниваем нормализованные значения
                     else:
                         if key == "last_update":
-                            # For last_time we pick later time
+                            # Для last_update выбираем более позднее время
                             try:
                                 old_time = datetime.datetime.fromisoformat(str(old_value))
                                 new_time = datetime.datetime.fromisoformat(str(new_value))
@@ -79,22 +85,24 @@ class ProviderDB:
     
         return deep_merge(old, new)
     
-    def get_by_npi(self, npi) -> Optional[Dict[str, Any]]:
+    async def get_by_npi(self, npi) -> Optional[Dict[str, Any]]:
+        await self._ensure_index()
         if isinstance(npi, str) and npi.isdigit():
-            result = self.collection.find_one({"provider.provider_identification.npi": int(npi)})
+            result = await self.collection.find_one({"provider.provider_identification.npi": int(npi)})
             if result:
                 return result
         elif isinstance(npi, int):
-            result = self.collection.find_one({"provider.provider_identification.npi": str(npi)})
+            result = await self.collection.find_one({"provider.provider_identification.npi": str(npi)})
             if result:
                 return result
         
-        return self.collection.find_one({"provider.provider_identification.npi": npi})
+        return await self.collection.find_one({"provider.provider_identification.npi": npi})
         
-    def merge_or_insert_many(self, providers: List[Dict[str, Any]]) -> List[str]:
+    async def merge_or_insert_many(self, providers: List[Dict[str, Any]]) -> List[str]:
         """
-        Merge many data after mapping 
+        Слияние или вставка множественных данных после маппинга
         """
+        await self._ensure_index()
         updated_ids = []
     
         for provider_data in providers:
@@ -102,14 +110,14 @@ class ProviderDB:
             if not npi:
                 continue
     
-            existing = self.get_by_npi(npi)
+            existing = await self.get_by_npi(npi)
     
             provider_data.setdefault("meta_info", {})
             provider_data["meta_info"]["last_update"] = datetime.datetime.utcnow().isoformat()
             provider_data["meta_info"]["data_hash"] = self._generate_data_hash(provider_data)
     
             if not existing:
-                result = self.collection.insert_one({"provider": provider_data})
+                result = await self.collection.insert_one({"provider": provider_data})
                 updated_ids.append(str(result.inserted_id))
                 continue
     
@@ -117,7 +125,7 @@ class ProviderDB:
             merged = self._merge_providers(existing_provider, provider_data)
             
             if merged != existing_provider:
-                self.collection.update_one(
+                await self.collection.update_one(
                     {"provider.provider_identification.npi": npi},
                     {"$set": {"provider": merged}}
                 )
@@ -125,10 +133,12 @@ class ProviderDB:
     
         return updated_ids
     
-    def merge_or_insert_one(self, provider_data: Dict[str, Any]) -> Optional[str]:
+    async def merge_or_insert_one(self, provider_data: Dict[str, Any]) -> Optional[str]:
         """
-        Merge or update Data for once data after mapping 
+        Слияние или обновление данных для одного элемента после маппинга
         """
+        await self._ensure_index()
+        
         npi = provider_data.get("provider_identification", {}).get("npi")
         if not npi:
             return None
@@ -137,9 +147,9 @@ class ProviderDB:
         provider_data["meta_info"]["last_update"] = datetime.datetime.utcnow().isoformat()
         provider_data["meta_info"]["data_hash"] = self._generate_data_hash(provider_data)
     
-        existing = self.get_by_npi(npi)
+        existing = await self.get_by_npi(npi)
         if not existing:
-            result = self.collection.insert_one({"provider": provider_data})
+            result = await self.collection.insert_one({"provider": provider_data})
             print(f"Inserted new provider with NPI: {npi}")
             return str(result.inserted_id)
     
@@ -152,7 +162,7 @@ class ProviderDB:
                 if isinstance(merged_npi, str) and merged_npi.isdigit():
                     merged["provider_identification"]["npi"] = int(merged_npi)
             
-            self.collection.update_one(
+            await self.collection.update_one(
                 {"provider.provider_identification.npi": existing_npi},
                 {"$set": {"provider": merged}}
             )
@@ -162,5 +172,6 @@ class ProviderDB:
         print(f"No changes for provider with NPI: {npi}")
         return str(existing["_id"])
     
-    def close(self):
+    async def close(self):
+        """Закрытие соединения с базой данных"""
         self.client.close()

@@ -9,3 +9,5 @@ source $VENV_DIR/bin/activate
 pip install -r req.txt
 
 echo "INSTALL OK '$VENV_DIR'"
+
+cd $VENV_DIR

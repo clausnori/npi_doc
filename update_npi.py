@@ -3,6 +3,9 @@ import re
 import os
 from NPI import NPI_Load, Verified, Mapper
 from MONGO import ProviderDB
+import asyncio
+from dotenv import load_dotenv
+import os
 
 LISTING_URL = "https://download.cms.gov/nppes/NPI_Files.html"
 BASE_URL = "https://download.cms.gov/nppes/"
