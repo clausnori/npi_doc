@@ -8,7 +8,7 @@ SCRIPT_PATH="$DIR/update_npi.py"
 
 PYTHON=$(which python3)
 
-CRON_TIME="0 3 * * *"
+CRON_TIME="0 3 */3 * *"
 
 TMP_CRON=$(mktemp)
 
