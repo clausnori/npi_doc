@@ -82,7 +82,6 @@ class ProviderDB:
     def _remove_nested_ids(self, obj):
         """Remove _id fields from nested objects while preserving the main document _id"""
         if isinstance(obj, dict):
-            # Remove _id from nested objects (not the main document)
             keys_to_remove = []
             for key, value in obj.items():
                 if key == "_id" and isinstance(value, ObjectId):

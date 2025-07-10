@@ -17,8 +17,6 @@ prefix (str): Prefix used to search for CSV files in the ZIP (ignored for standa
 csv_filename (str, optional): Specific name of the CSV file inside the ZIP (if known)
 """
 
-
-
 class NPI_Load:
     def __init__(self, file_path: str, prefix: str = "", csv_filename: Optional[str] = None):
         self.file_path = file_path
@@ -214,30 +212,25 @@ class NPI_Load:
             if zip_file:
                 zip_file.close()
         
-        # Поиск по чанкам
         found_count = 0
         total_chunks = 0
         
         for chunk in self.read_csv_in_chunks(chunk_size=chunk_size, dtype_map=dtype_map):
             total_chunks += 1
             
-            # Конвертируем колонку NPI в строку для сравнения
             chunk[npi_column] = chunk[npi_column].astype(str)
             
-            # Ищем совпадения
             matches = chunk[chunk[npi_column] == npi_str]
             
             if not matches.empty:
                 found_count += len(matches)
                 print(f"Найдено {len(matches)} совпадений в чанке {total_chunks}")
                 
-                # Добавляем к результату
                 if result_df.empty:
                     result_df = matches.copy()
                 else:
                     result_df = pd.concat([result_df, matches], ignore_index=True)
                 
-                # Если нужно вернуть сразу после первого совпадения
                 if return_first:
                     print(f"Поиск завершен досрочно. Найдена первая запись в чанке {total_chunks}.")
                     return result_df

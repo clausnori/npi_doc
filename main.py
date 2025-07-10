@@ -6,8 +6,10 @@ import os
 
 load_dotenv()
 
+#WARNING : ONLY for console usage,if you need push in db your data file
+
 async def main():
-    load = NPI_Load("NPPES_Data_Dissemination_063025_070625_Weekly.zip", "npidata")
+    load = NPI_Load(".zip", "npidata")
     mapper = Mapper()
     tools = Verified()
     mongo_db = ProviderDB(
@@ -21,7 +23,6 @@ async def main():
       for idx in range(len(chunk)):
           row_df = chunk.iloc[[idx]]
           cms_data = mapper.map(row_df, for_type)
-          print(cms_data)
           results = await mongo_db.merge_or_insert_one(cms_data[0])
     await mongo_db.close()
     
