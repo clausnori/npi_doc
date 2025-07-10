@@ -23,7 +23,7 @@ async def main():
           cms_data = mapper.map(row_df, for_type)
           print(cms_data)
           results = await mongo_db.merge_or_insert_one(cms_data[0])
-    await db.close()
+    await mongo_db.close()
     
 if __name__ == "__main__":
   asyncio.run(main())

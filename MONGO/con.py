@@ -13,29 +13,25 @@ class ProviderDB:
         self._index_created = False
     
     async def _ensure_index(self):
-        """Создаем индекс если он еще не создан"""
         if not self._index_created:
-            await self.collection.create_index("provider.provider_identification.npi", unique=True)
+            await self.collection.create_index("provider_identification.npi", unique=True)
             self._index_created = True
     
     def _generate_data_hash(self, data: Dict[str, Any]) -> str:
-        provider = data.get("provider", data)
-        meta = provider.get("meta_info", {}).copy()
+        meta = data.get("meta_info", {}).copy()
         meta.pop("last_update", None)
 
-        provider_copy = provider.copy()
-        provider_copy["meta_info"] = meta
+        data_copy = data.copy()
+        data_copy["meta_info"] = meta
 
-        json_str = json.dumps(provider_copy, sort_keys=True, default=str)
+        json_str = json.dumps(data_copy, sort_keys=True, default=str)
         return hashlib.sha256(json_str.encode()).hexdigest()
         
     def _merge_providers(self, old: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
         def is_empty(value):
-            """Проверка на пустое значение"""
             return value in [None, "", [], {}]
         
         def normalize_value(value):
-            """Нормализация данных для сравнения"""
             if isinstance(value, str) and value.isdigit():
                 return int(value)
             return value
@@ -61,10 +57,8 @@ class ProviderDB:
                             combined = old_value + new_value
                             merged[key] = list(dict.fromkeys(combined))
                                        
-                    # Для всех остальных случаев - сравниваем нормализованные значения
                     else:
                         if key == "last_update":
-                            # Для last_update выбираем более позднее время
                             try:
                                 old_time = datetime.datetime.fromisoformat(str(old_value))
                                 new_time = datetime.datetime.fromisoformat(str(new_value))
@@ -85,23 +79,56 @@ class ProviderDB:
     
         return deep_merge(old, new)
     
+    def _remove_nested_ids(self, obj):
+        """Remove _id fields from nested objects while preserving the main document _id"""
+        if isinstance(obj, dict):
+            # Remove _id from nested objects (not the main document)
+            keys_to_remove = []
+            for key, value in obj.items():
+                if key == "_id" and isinstance(value, ObjectId):
+                    # Skip - this is likely a nested object's _id
+                    keys_to_remove.append(key)
+                elif isinstance(value, (dict, list)):
+                    self._remove_nested_ids(value)
+            
+            # Remove nested _id fields
+            for key in keys_to_remove:
+                if key != "_id" or not isinstance(obj.get("_id"), str):
+                    # Only remove if it's not the main document _id (which should be string)
+                    obj.pop(key, None)
+                    
+        elif isinstance(obj, list):
+            for item in obj:
+                if isinstance(item, dict):
+                    # Remove _id from objects in arrays
+                    if "_id" in item:
+                        item.pop("_id", None)
+                    self._remove_nested_ids(item)
+                elif isinstance(item, list):
+                    self._remove_nested_ids(item)
+
     async def get_by_npi(self, npi) -> Optional[Dict[str, Any]]:
         await self._ensure_index()
         if isinstance(npi, str) and npi.isdigit():
-            result = await self.collection.find_one({"provider.provider_identification.npi": int(npi)})
+            result = await self.collection.find_one({"provider_identification.npi": int(npi)})
             if result:
+                result["_id"] = str(result["_id"])
+                self._remove_nested_ids(result)
                 return result
         elif isinstance(npi, int):
-            result = await self.collection.find_one({"provider.provider_identification.npi": str(npi)})
+            result = await self.collection.find_one({"provider_identification.npi": str(npi)})
             if result:
+                result["_id"] = str(result["_id"])
+                self._remove_nested_ids(result)
                 return result
         
-        return await self.collection.find_one({"provider.provider_identification.npi": npi})
+        result = await self.collection.find_one({"provider_identification.npi": npi})
+        if result:
+            result["_id"] = str(result["_id"])
+            self._remove_nested_ids(result)
+        return result
         
     async def merge_or_insert_many(self, providers: List[Dict[str, Any]]) -> List[str]:
-        """
-        Слияние или вставка множественных данных после маппинга
-        """
         await self._ensure_index()
         updated_ids = []
     
@@ -117,26 +144,22 @@ class ProviderDB:
             provider_data["meta_info"]["data_hash"] = self._generate_data_hash(provider_data)
     
             if not existing:
-                result = await self.collection.insert_one({"provider": provider_data})
+                result = await self.collection.insert_one(provider_data)
                 updated_ids.append(str(result.inserted_id))
                 continue
     
-            existing_provider = existing.get("provider", {})
-            merged = self._merge_providers(existing_provider, provider_data)
+            merged = self._merge_providers(existing, provider_data)
             
-            if merged != existing_provider:
+            if merged != existing:
                 await self.collection.update_one(
-                    {"provider.provider_identification.npi": npi},
-                    {"$set": {"provider": merged}}
+                    {"provider_identification.npi": npi},
+                    {"$set": merged}
                 )
                 updated_ids.append(str(existing["_id"]))
     
         return updated_ids
     
     async def merge_or_insert_one(self, provider_data: Dict[str, Any]) -> Optional[str]:
-        """
-        Слияние или обновление данных для одного элемента после маппинга
-        """
         await self._ensure_index()
         
         npi = provider_data.get("provider_identification", {}).get("npi")
@@ -149,29 +172,128 @@ class ProviderDB:
     
         existing = await self.get_by_npi(npi)
         if not existing:
-            result = await self.collection.insert_one({"provider": provider_data})
+            result = await self.collection.insert_one(provider_data)
             print(f"Inserted new provider with NPI: {npi}")
             return str(result.inserted_id)
     
-        existing_provider = existing.get("provider", {})
-        merged = self._merge_providers(existing_provider, provider_data)
-        if merged != existing_provider:
-            existing_npi = existing_provider.get("provider_identification", {}).get("npi")
+        merged = self._merge_providers(existing, provider_data)
+        if merged != existing:
+            existing_npi = existing.get("provider_identification", {}).get("npi")
             if existing_npi and isinstance(existing_npi, int):
                 merged_npi = merged.get("provider_identification", {}).get("npi")
                 if isinstance(merged_npi, str) and merged_npi.isdigit():
                     merged["provider_identification"]["npi"] = int(merged_npi)
             
             await self.collection.update_one(
-                {"provider.provider_identification.npi": existing_npi},
-                {"$set": {"provider": merged}}
+                {"provider_identification.npi": existing_npi},
+                {"$set": merged}
             )
             print(f"Updated provider with NPI: {npi}")
             return str(existing["_id"])
         
         print(f"No changes for provider with NPI: {npi}")
         return str(existing["_id"])
+
+    async def get_all_providers(
+        self, 
+        page: int = 1, 
+        page_size: int = 100, 
+        filter_query: Optional[Dict[str, Any]] = None,
+        sort_field: str = "_id",
+        sort_direction: int = 1,
+        projection: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        await self._ensure_index()
+        
+        if page < 1:
+            page = 1
+        if page_size < 1:
+            page_size = 100
+        if page_size > 1000:
+            page_size = 1000
+        
+        query = filter_query or {}
+        total_items = await self.collection.count_documents(query)
+        total_pages = (total_items + page_size - 1) // page_size
+        skip = (page - 1) * page_size
+        
+        cursor = self.collection.find(
+            query,
+            projection
+        ).sort(sort_field, sort_direction).skip(skip).limit(page_size)
+        
+        data = await cursor.to_list(length=page_size)
+        
+        for item in data:
+            if "_id" in item:
+                item["_id"] = str(item["_id"])
+            # Recursively remove _id from nested objects
+            self._remove_nested_ids(item)
+        
+        return {
+            "data": data,
+            "pagination": {
+                "current_page": page,
+                "page_size": page_size,
+                "total_items": total_items,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_previous": page > 1
+            }
+        }
+
+    async def get_providers_by_criteria(
+        self,
+        criteria: Dict[str, Any],
+        page: int = 1,
+        page_size: int = 100,
+        sort_field: str = "_id",
+        sort_direction: int = 1
+    ) -> Dict[str, Any]:
+        return await self.get_all_providers(
+            page=page,
+            page_size=page_size,
+            filter_query=criteria,
+            sort_field=sort_field,
+            sort_direction=sort_direction
+        )
+
+    async def search_providers(
+        self,
+        search_term: str,
+        search_fields: List[str] = None,
+        page: int = 1,
+        page_size: int = 100,
+        sort_field: str = "_id",
+        sort_direction: int = 1
+    ) -> Dict[str, Any]:
+        if not search_fields:
+            search_fields = [
+                "provider_identification.organization_name",
+                "provider_identification.individual_name.first_name",
+                "provider_identification.individual_name.last_name",
+                "provider_identification.individual_name.middle_name"
+            ]
+        
+        search_query = {
+            "$or": [
+                {field: {"$regex": search_term, "$options": "i"}} 
+                for field in search_fields
+            ]
+        }
+        
+        return await self.get_all_providers(
+            page=page,
+            page_size=page_size,
+            filter_query=search_query,
+            sort_field=sort_field,
+            sort_direction=sort_direction
+        )
+
+    async def get_providers_count(self, filter_query: Optional[Dict[str, Any]] = None) -> int:
+        await self._ensure_index()
+        query = filter_query or {}
+        return await self.collection.count_documents(query)
     
     async def close(self):
-        """Закрытие соединения с базой данных"""
         self.client.close()

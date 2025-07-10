@@ -3,3 +3,5 @@ NPPES_Data_Dissemination_June_2025.zip
 .env
 __pycache__/
 app/
+drop.py
+find.py

@@ -1,0 +1,31 @@
+http://127.0.0.1:8000/provider/?npi=1437634250
+
+{"provider_data":{"_id":"686f8dea06bf3569daf7dfa6","provider":{"provider_identification":{"npi":1437634250,"pac_id":null,"enrollment_id":null,"entity_type_code":2},"provider_personal_info":{"last_name":null,"first_name":null,"middle_name":null,"suffix":null,"gender":null,"credentials":null},"provider_professional_info":{"medical_school":null,"graduation_year":null,"primary_specialty":null,"secondary_specialties":[],"taxonomy_code":["225X00000X","225100000X"],"taxonomy_primary":"N"},"provider_licensing":{"license_number":null,"license_state":null},"business_addresses":{"mailing_address":{"mailing_address":{"line_1":"2001 BUTTERFIELD RD STE 1600","line_2":null,"city":"DOWNERS GROVE","state":"IL","zip_code":605151211,"country":"US","phone":8663708206.0,"fax":null}},"practice_location":{"practice_location":{"line_1":"3281 PLAZA WAY","line_2":null,"city":"WALDORF","state":"MD","zip_code":206034861,"country":"US","phone":2407545520,"fax":3017056797.0}}},"provider_status":{"active":true,"deactivation_reason":null,"is_sole_proprietor":null,"is_organization_subpart":"N"},"current_practice_info":{"facility_name":null,"facility_pac_id":null,"organization_members_count":null,"practice_address":{"line_1":null,"line_2":null,"city":null,"state":null,"zip_code":null,"phone":null,"address_id":null}},"medicare_participation":{"individual_assignment":null,"group_assignment":null},"telehealth_services":{"telehealth_eligible":null},"additional_identifiers":[],"authorized_official":{"last_name":null,"first_name":null,"middle_name":null,"title":null,"phone":null,"credentials":null},"parent_organization":{"legal_business_name":null,"tax_id":null},"meta_info":{"data_hash":"cf48a0bf61653b5467e3743a4d758a0d92791e004f0fdc26d2f58828a345d58c","last_update":"2025-07-10T09:54:50.159517"}}}}
+
+
+Добавь работу с API
+
+
+http://127.0.0.1:8000/provider
+
+# Получить первые 50 провайдеров
+GET /providers/?page=1&page_size=50
+
+# Поиск по имени
+GET /providers/search/?search_term=John&page=1&page_size=10
+
+# Фильтрация по штату и городу
+GET /providers/filter/?state=NY&city=New York&page=1&page_size=25
+
+# Провайдеры конкретного штата
+GET /providers/by-state/CA?page=1&page_size=100
+
+# Подсчет всех провайдеров
+GET /providers/count/
+
+# Минимальные данные
+GET /providers/minimal/?page=1&page_size=200
+
+
+
+{"data":[{"_id":"686f8de806bf3569daf7dfa1","provider":{"provider_identification":{"npi":1174269351,"pac_id":null,"enrollment_id":null,"entity_type_code":1},"provider_personal_info":{"last_name":"SPANGENBERG","first_name":"AMELIE","middle_name":null,"suffix":null,"gender":"F","credentials":"MBBS"},"provider_professional_info":{"medical_school":null,"graduation_year":null,"primary_specialty":null,"secondary_specialties":[],"taxonomy_code":["390200000X"],"taxonomy_primary":"Y"},"provider_licensing":{"license_number":null,"license_state":null},"business_addresses":{"mailing_address":{"mailing_address":{"line_1":"1701 DIVISADERO STREET, ROOM 4 20","line_2":"UCSF, DEPARTMENT OF DERMATOLOGY","city":"SAN FRANCISCO","state":"CA","zip_code":94115,"country":"US","phone":4153537880.0,"fax":null}},"practice_location":{"practice_location":{"line_1":"1701 DIVISADERO STREET, ROOM 4 20","line_2":"UCSF, DEPARTMENT OF DERMATOLOGY","city":"SAN FRANCISCO","state":"CA","zip_code":94115,"country":"US","phone":4153537880,"fax":null}}},"provider_status":{"active":false,"deactivation_reason":null,"is_sole_proprietor":"Y","is_organization_subpart":null},"current_practice_info":{"facility_name":null,"facility_pac_id":null,"organization_members_count":null,"practice_address":{"line_1":null,"line_2":null,"city":null,"state":null,"zip_code":null,"phone":null,"address_id":null}},"medicare_participation":{"individual_assignment":null,"group_assignment":null},"telehealth_services":{"telehealth_eligible":null},"additional_identifiers":[],"authorized_official":{"last_name":null,"first_name":null,"middle_name":null,"title":null,"phone":null,"credentials":null},"parent_organization":{"legal_business_name":null,"tax_id":null},"meta_info":{"data_hash":"47d12599b06b518d501bc7f62ce27206f1f684a2f5ee204f1ff6c9fe8d408f6a","last_update":"2025-07-10T09:54:47.931480"}}},{"_id":"686f8de806bf3569daf7dfa2","provider":{"provider_identification":{"npi":1710989348,"pac_id":null,"enrollment_id":null,"entity_type_code":1},"provider_personal_info":{"last_name":"LUNDE","first_name":"JOHN","middle_name":"RANDALL","suffix":null,"gender":"M","credentials":"DNP, APRN"},"provider_professional_info":{"medical_school":null,"graduation_year":null,"primary_specialty":null,"secondary_specialties":[],"taxonomy_code":["363L00000X","363LP0808X"],"taxonomy_primary":"Y"},"provider_licensing":{"license_number":"ARNP 9211875","license_state":"FL"},"business_addresses":{"mailing_address":{"mailing_address":{"line_1":"349 FOXRIDGE RD","line_2":null,"city":"ORANGE PARK","state":"FL","zip_code":320655737,"country":"US","phone":9042980715.0,"fax":9042980715.0}},"practice_location":{"practice_location":{"line_1":"2001 KINGSLEY AVE","line_2":null,"city":"ORANGE PARK","state":"FL","zip_code":320735148,"country":"US","phone":9046393551,"fax":null}}},"provider_status":{"active":true,"deactivation_reason":null,"is_sole_proprietor":"N","is_organization_subpart":null},"current_practice_info":{"facility_name":null,"facility_pac_id":null,"organization_members_count":null,"practice_address":{"line_1":null,"line_2":null,"city":null,"state":null,"zip_code":null,"phone":null,"address_id":null}},"medicare_participation":{"individual_assignment":null,"group_assignment":null},"telehealth_services":{"telehealth_eligible":null},"additional_identifiers":[],"authorized_official":{"last_name":null,"first_name":null,"middle_name":null,"title":null,"phone":null,"credentials":null},"parent_organization":{"legal_business_name":null,"tax_id":null},"meta_info":{"data_hash":"e333900d4e6e15b3c3d2cd0c2d3c7f2710fabb935db92baacdfb531e9f355b90","last_update":"2025-07-10T09:54:48.379329"}}}],"pagination":{"current_page":1,"page_size":2,"total_items":6,"total_pages":3,"has_next":true,"has_previous":false}}
