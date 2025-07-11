@@ -221,7 +221,6 @@ class Mapper:
                 gender=self._get_column_value(row, 'Provider Sex Code'),
                 credentials=self._get_column_value(row, 'Provider Credential Text')
             ))
-            print("TAX",taxonomy_code)
             # Provider Professional Info
             provider_data.update(self._provider_professional_info(
                 taxonomy_code=taxonomy_code,

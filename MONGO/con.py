@@ -26,6 +26,27 @@ class ProviderDB:
 
         json_str = json.dumps(data_copy, sort_keys=True, default=str)
         return hashlib.sha256(json_str.encode()).hexdigest()
+    
+    def _normalize_address_structure(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Нормализация структуры адресов для устранения лишней вложенности"""
+        if not isinstance(data, dict):
+            return data
+        
+        normalized = data.copy()
+        
+        # Обработка business_addresses
+        if "business_addresses" in normalized:
+            business_addresses = normalized["business_addresses"]
+            
+            for addr_type in ["mailing_address", "practice_location"]:
+                if addr_type in business_addresses:
+                    addr_data = business_addresses[addr_type]
+                    
+                    # Если есть лишняя вложенность (ключ повторяется)
+                    if isinstance(addr_data, dict) and addr_type in addr_data:
+                        business_addresses[addr_type] = addr_data[addr_type]
+        
+        return normalized
         
     def _merge_providers(self, old: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
         def is_empty(value):
@@ -76,8 +97,15 @@ class ProviderDB:
                 return merged
             else:
                 return new_data if not is_empty(new_data) else old_data
-    
-        return deep_merge(old, new)
+        
+        # Нормализуем структуру адресов перед слиянием
+        normalized_old = self._normalize_address_structure(old)
+        normalized_new = self._normalize_address_structure(new)
+        
+        merged = deep_merge(normalized_old, normalized_new)
+        
+        # Финальная нормализация результата
+        return self._normalize_address_structure(merged)
     
     def _remove_nested_ids(self, obj):
         """Remove _id fields from nested objects while preserving the main document _id"""
@@ -135,6 +163,9 @@ class ProviderDB:
             npi = provider_data.get("provider_identification", {}).get("npi")
             if not npi:
                 continue
+                
+            # Нормализуем структуру перед обработкой
+            provider_data = self._normalize_address_structure(provider_data)
     
             existing = await self.get_by_npi(npi)
     
@@ -164,17 +195,20 @@ class ProviderDB:
         npi = provider_data.get("provider_identification", {}).get("npi")
         if not npi:
             return None
-    
+
+        # Нормализуем структуру перед обработкой
+        provider_data = self._normalize_address_structure(provider_data)
+
         provider_data.setdefault("meta_info", {})
         provider_data["meta_info"]["last_update"] = datetime.datetime.utcnow().isoformat()
         provider_data["meta_info"]["data_hash"] = self._generate_data_hash(provider_data)
-    
+
         existing = await self.get_by_npi(npi)
         if not existing:
             result = await self.collection.insert_one(provider_data)
             print(f"Inserted new provider with NPI: {npi}")
             return str(result.inserted_id)
-    
+
         merged = self._merge_providers(existing, provider_data)
         if merged != existing:
             existing_npi = existing.get("provider_identification", {}).get("npi")
@@ -183,9 +217,13 @@ class ProviderDB:
                 if isinstance(merged_npi, str) and merged_npi.isdigit():
                     merged["provider_identification"]["npi"] = int(merged_npi)
             
+            # Remove _id from merged data before updating
+            update_data = merged.copy()
+            update_data.pop("_id", None)
+            
             await self.collection.update_one(
                 {"provider_identification.npi": existing_npi},
-                {"$set": merged}
+                {"$set": update_data}
             )
             print(f"Updated provider with NPI: {npi}")
             return str(existing["_id"])
