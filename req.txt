@@ -1,2 +1,7 @@
 motor
 pandas
+aiohttp
+hashlib
+json
+datetime
+bson

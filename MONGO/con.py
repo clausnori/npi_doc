@@ -28,13 +28,11 @@ class ProviderDB:
         return hashlib.sha256(json_str.encode()).hexdigest()
     
     def _normalize_address_structure(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Нормализация структуры адресов для устранения лишней вложенности"""
         if not isinstance(data, dict):
             return data
         
         normalized = data.copy()
         
-        # Обработка business_addresses
         if "business_addresses" in normalized:
             business_addresses = normalized["business_addresses"]
             
@@ -42,7 +40,6 @@ class ProviderDB:
                 if addr_type in business_addresses:
                     addr_data = business_addresses[addr_type]
                     
-                    # Если есть лишняя вложенность (ключ повторяется)
                     if isinstance(addr_data, dict) and addr_type in addr_data:
                         business_addresses[addr_type] = addr_data[addr_type]
         
@@ -98,13 +95,11 @@ class ProviderDB:
             else:
                 return new_data if not is_empty(new_data) else old_data
         
-        # Нормализуем структуру адресов перед слиянием
         normalized_old = self._normalize_address_structure(old)
         normalized_new = self._normalize_address_structure(new)
         
         merged = deep_merge(normalized_old, normalized_new)
         
-        # Финальная нормализация результата
         return self._normalize_address_structure(merged)
     
     def _remove_nested_ids(self, obj):
@@ -164,7 +159,6 @@ class ProviderDB:
             if not npi:
                 continue
                 
-            # Нормализуем структуру перед обработкой
             provider_data = self._normalize_address_structure(provider_data)
     
             existing = await self.get_by_npi(npi)
@@ -196,7 +190,6 @@ class ProviderDB:
         if not npi:
             return None
 
-        # Нормализуем структуру перед обработкой
         provider_data = self._normalize_address_structure(provider_data)
 
         provider_data.setdefault("meta_info", {})
